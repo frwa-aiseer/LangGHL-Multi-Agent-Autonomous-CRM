@@ -1,0 +1,716 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import React, { useEffect, useRef, useState } from "react";
+import {
+  INITIAL_AGENTS,
+  INITIAL_EXECUTION_TRACES,
+  INITIAL_GHL_CONFIG,
+  INITIAL_LANGGRAPH_NODES,
+  INITIAL_LEADS,
+  INITIAL_ROUTINES,
+} from "./data/initialData";
+import {
+  AgentDefinition,
+  AutomationRoutine,
+  GHLConfig,
+  GhlPipelineStage,
+  LangGraphExecutionTrace,
+  LangGraphNode,
+  Lead,
+  SequenceStep,
+} from "./types";
+import { Header } from "./components/Header";
+import { LangGraphCanvas } from "./components/LangGraphCanvas";
+import { GhlPipelineBoard } from "./components/GhlPipelineBoard";
+import { LeadsInboxView } from "./components/LeadsInboxView";
+import { AutonomousLoopsView } from "./components/AutonomousLoopsView";
+import { SequenceStudio } from "./components/SequenceStudio";
+import { GhlWebhookSimulator } from "./components/GhlWebhookSimulator";
+import { TelemetryAnalytics } from "./components/TelemetryAnalytics";
+import { LeadDossierModal } from "./components/LeadDossierModal";
+import { NewLeadModal } from "./components/NewLeadModal";
+import confetti from "canvas-confetti";
+
+export default function App() {
+  const [activeTab, setActiveTab] = useState<string>("langgraph");
+  const [leads, setLeads] = useState<Lead[]>(INITIAL_LEADS);
+  const [agents, setAgents] = useState<AgentDefinition[]>(INITIAL_AGENTS);
+  const [nodes, setNodes] = useState<LangGraphNode[]>(INITIAL_LANGGRAPH_NODES);
+  const [routines, setRoutines] = useState<AutomationRoutine[]>(INITIAL_ROUTINES);
+  const [traces, setTraces] = useState<LangGraphExecutionTrace[]>(INITIAL_EXECUTION_TRACES);
+  const [ghlConfig, setGhlConfig] = useState<GHLConfig>(INITIAL_GHL_CONFIG);
+
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [isNewLeadModalOpen, setIsNewLeadModalOpen] = useState(false);
+  const [isLooping, setIsLooping] = useState(true);
+  const [loopIntervalSec, setLoopIntervalSec] = useState(15);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const loopTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  // -------------------------------------------------------------
+  // API: Score Lead (Claude Evaluator Agent)
+  // -------------------------------------------------------------
+  const handleScoreLead = async (leadToScore: Lead) => {
+    setIsProcessing(true);
+    try {
+      const res = await fetch("/api/agent/score-lead", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lead: leadToScore }),
+      });
+      const data = await res.json();
+
+      const updatedLead: Lead = {
+        ...leadToScore,
+        ai_score: data.score || 88,
+        icp_fit: data.icp_fit || "A (Prime)",
+        score_breakdown: data.breakdown || {
+          intent: 90,
+          authority: 90,
+          budget: 80,
+          timing: 85,
+          need: 90,
+        },
+        pain_points: data.pain_points || leadToScore.pain_points,
+        suggested_strategy: data.recommended_strategy || leadToScore.suggested_strategy,
+        tags: Array.from(new Set([...leadToScore.tags, ...(data.suggested_tags || [])])),
+        ghl_pipeline_stage:
+          leadToScore.ghl_pipeline_stage === "new_inbound"
+            ? "scoring_enrichment"
+            : leadToScore.ghl_pipeline_stage,
+        activity_log: [
+          {
+            id: "act_" + Math.random().toString(36).substr(2, 9),
+            timestamp: new Date().toISOString(),
+            agent: "Claude Lead Evaluator",
+            action: `Assigned AI Lead Score: ${data.score || 88}/100 (${data.icp_fit || "Prime"})`,
+            details: data.reasoning || "Completed deep BANT & intent scoring.",
+            sentiment: "high_intent",
+          },
+          ...leadToScore.activity_log,
+        ],
+      };
+
+      setLeads((prev) => prev.map((l) => (l.id === leadToScore.id ? updatedLead : l)));
+      if (selectedLead?.id === leadToScore.id) {
+        setSelectedLead(updatedLead);
+      }
+
+      // Add trace
+      setTraces((prev) => [
+        {
+          id: "trace_" + Math.random().toString(36).substr(2, 9),
+          timestamp: new Date().toISOString(),
+          lead_id: leadToScore.id,
+          lead_name: `${leadToScore.first_name} ${leadToScore.last_name}`,
+          node_id: "node_evaluator",
+          agent_name: "Claude Lead Evaluator",
+          action: `Evaluated Lead: Score ${data.score || 88}/100`,
+          state_before: leadToScore.ghl_pipeline_stage,
+          state_after: updatedLead.ghl_pipeline_stage,
+          thought_trace: data.reasoning || "Evaluated psychographics, decision authority, and budget alignment.",
+          duration_ms: 360,
+        },
+        ...prev,
+      ]);
+
+      showToast(`🧠 Claude scored ${leadToScore.first_name} ${leadToScore.last_name}: ${data.score || 88}/100`);
+    } catch (e: any) {
+      console.error(e);
+      showToast("Error scoring lead: " + e.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // -------------------------------------------------------------
+  // API: Generate Outreach Sequence (Claude Scribe Agent)
+  // -------------------------------------------------------------
+  const handleGenerateSequence = async (
+    targetLead: Lead,
+    style?: string,
+    bookingLink?: string
+  ): Promise<SequenceStep[] | void> => {
+    setIsProcessing(true);
+    try {
+      const res = await fetch("/api/agent/generate-sequence", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lead: targetLead,
+          style: style || "Value-First Consultative",
+          calendarLink: bookingLink || "https://link.ghlcalendar.com/discovery-demo",
+        }),
+      });
+      const data = await res.json();
+      const steps: SequenceStep[] = data.steps || [];
+
+      const updatedLead: Lead = {
+        ...targetLead,
+        sequence_steps: steps,
+        outreach_status: "step_1_sent",
+        ghl_pipeline_stage:
+          targetLead.ghl_pipeline_stage === "scoring_enrichment" ||
+          targetLead.ghl_pipeline_stage === "new_inbound"
+            ? "active_sequence"
+            : targetLead.ghl_pipeline_stage,
+        activity_log: [
+          {
+            id: "act_" + Math.random().toString(36).substr(2, 9),
+            timestamp: new Date().toISOString(),
+            agent: "Claude Copy Scribe",
+            action: `Generated 4-touchpoint omni-channel sequence (${style || "Value-First"})`,
+            details: `Synthesized personalized email & SMS hooks for ${targetLead.company}.`,
+            sentiment: "positive",
+          },
+          ...targetLead.activity_log,
+        ],
+      };
+
+      setLeads((prev) => prev.map((l) => (l.id === targetLead.id ? updatedLead : l)));
+      if (selectedLead?.id === targetLead.id) {
+        setSelectedLead(updatedLead);
+      }
+
+      setTraces((prev) => [
+        {
+          id: "trace_" + Math.random().toString(36).substr(2, 9),
+          timestamp: new Date().toISOString(),
+          lead_id: targetLead.id,
+          lead_name: `${targetLead.first_name} ${targetLead.last_name}`,
+          node_id: "node_scribe",
+          agent_name: "Claude Copy Scribe",
+          action: "Synthesized 4-Touchpoint Sequence",
+          state_before: targetLead.ghl_pipeline_stage,
+          state_after: updatedLead.ghl_pipeline_stage,
+          thought_trace: `Synthesized bespoke value-first copy for ${targetLead.company}. Dispatched via GHL API.`,
+          duration_ms: 480,
+        },
+        ...prev,
+      ]);
+
+      showToast(`✉️ Claude Scribe generated personalized sequence for ${targetLead.first_name}`);
+      return steps;
+    } catch (e: any) {
+      console.error(e);
+      showToast("Error generating sequence: " + e.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // -------------------------------------------------------------
+  // API: Simulate Prospect Reply & Trigger Objection Handling Closer
+  // -------------------------------------------------------------
+  const handleSimulateInboundReply = async (leadId: string, replyText: string) => {
+    const lead = leads.find((l) => l.id === leadId);
+    if (!lead) return;
+
+    setIsProcessing(true);
+    try {
+      // Append user reply message
+      const leadMsg = {
+        id: "msg_" + Math.random().toString(36).substr(2, 9),
+        sender: "lead" as const,
+        channel: "email" as const,
+        text: replyText,
+        timestamp: new Date().toISOString(),
+      };
+
+      const interimHistory = [...lead.conversation_history, leadMsg];
+
+      // Call API for objection handling
+      const res = await fetch("/api/agent/handle-reply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lead,
+          incomingMessage: replyText,
+          conversationHistory: interimHistory,
+          calendarLink: "https://link.ghlcalendar.com/discovery-demo",
+        }),
+      });
+      const data = await res.json();
+
+      const agentMsg = {
+        id: "msg_" + Math.random().toString(36).substr(2, 9),
+        sender: "agent" as const,
+        channel: "email" as const,
+        text: data.reply,
+        timestamp: new Date().toISOString(),
+        metadata: {
+          agentName: "Objection Handling Closer",
+          objectionType: data.objection_type,
+        },
+      };
+
+      const nextStage: GhlPipelineStage =
+        data.suggested_next_stage === "appointment_booked"
+          ? "appointment_booked"
+          : "engaged_objection";
+
+      const updatedLead: Lead = {
+        ...lead,
+        conversation_history: [...interimHistory, agentMsg],
+        outreach_status: "replied",
+        ghl_pipeline_stage: nextStage,
+        activity_log: [
+          {
+            id: "act_" + Math.random().toString(36).substr(2, 9),
+            timestamp: new Date().toISOString(),
+            agent: "Objection Handling Closer",
+            action: `Handled Objection: ${data.objection_type || "General Inquiry"}`,
+            details: data.reasoning || "Delivered contextual rebuttal and calendar booking prompt.",
+            sentiment: "positive",
+          },
+          {
+            id: "act_" + Math.random().toString(36).substr(2, 9),
+            timestamp: new Date().toISOString(),
+            agent: "LangGraph Orchestrator",
+            action: `Received Inbound Reply from ${lead.first_name}`,
+            details: `"${replyText}"`,
+            sentiment: "neutral",
+          },
+          ...lead.activity_log,
+        ],
+      };
+
+      setLeads((prev) => prev.map((l) => (l.id === leadId ? updatedLead : l)));
+      if (selectedLead?.id === leadId) {
+        setSelectedLead(updatedLead);
+      }
+
+      setTraces((prev) => [
+        {
+          id: "trace_" + Math.random().toString(36).substr(2, 9),
+          timestamp: new Date().toISOString(),
+          lead_id: lead.id,
+          lead_name: `${lead.first_name} ${lead.last_name}`,
+          node_id: "node_closer",
+          agent_name: "Objection Handling Closer",
+          action: `Resolved Objection: ${data.objection_type}`,
+          state_before: lead.ghl_pipeline_stage,
+          state_after: nextStage,
+          thought_trace: data.reasoning || "Classified inbound reply sentiment, formulated rebuttal, and provided 1-click booking link.",
+          duration_ms: 410,
+        },
+        ...prev,
+      ]);
+
+      showToast(`💬 Closer Agent responded to ${lead.first_name} (${data.objection_type})`);
+    } catch (e: any) {
+      console.error(e);
+      showToast("Error handling reply: " + e.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // -------------------------------------------------------------
+  // Manual Outbound Message
+  // -------------------------------------------------------------
+  const handleSendMessage = (leadId: string, text: string, channel: "email" | "sms") => {
+    const lead = leads.find((l) => l.id === leadId);
+    if (!lead) return;
+
+    const newMsg = {
+      id: "msg_" + Math.random().toString(36).substr(2, 9),
+      sender: "agent" as const,
+      channel,
+      text,
+      timestamp: new Date().toISOString(),
+      metadata: { agentName: "Manual Operator / AI Co-Pilot" },
+    };
+
+    const updatedLead: Lead = {
+      ...lead,
+      conversation_history: [...lead.conversation_history, newMsg],
+      last_contacted: new Date().toISOString(),
+    };
+
+    setLeads((prev) => prev.map((l) => (l.id === leadId ? updatedLead : l)));
+    if (selectedLead?.id === leadId) setSelectedLead(updatedLead);
+    showToast(`Sent ${channel.toUpperCase()} message to ${lead.first_name}`);
+  };
+
+  // -------------------------------------------------------------
+  // Book Appointment (Calendar Agent)
+  // -------------------------------------------------------------
+  const handleBookAppointment = (leadId: string, date: string, time: string) => {
+    const lead = leads.find((l) => l.id === leadId);
+    if (!lead) return;
+
+    const appointment = {
+      date,
+      time,
+      timezone: "America/New_York",
+      meeting_link: "https://meet.google.com/ghl-" + Math.random().toString(36).substr(2, 6),
+      status: "confirmed" as const,
+      calendar_id: ghlConfig.calendar_id,
+      notes: `Autonomously booked discovery demo for ${lead.company}.`,
+    };
+
+    const updatedLead: Lead = {
+      ...lead,
+      ghl_pipeline_stage: "appointment_booked",
+      outreach_status: "booked",
+      appointment,
+      activity_log: [
+        {
+          id: "act_" + Math.random().toString(36).substr(2, 9),
+          timestamp: new Date().toISOString(),
+          agent: "GHL Appointment Booker",
+          action: "Locked Discovery Demo on GHL Calendar",
+          details: `Date: ${date} at ${time}. Dispatched calendar invite & SMS reminder.`,
+          sentiment: "high_intent",
+        },
+        ...lead.activity_log,
+      ],
+    };
+
+    setLeads((prev) => prev.map((l) => (l.id === leadId ? updatedLead : l)));
+    if (selectedLead?.id === leadId) setSelectedLead(updatedLead);
+
+    setTraces((prev) => [
+      {
+        id: "trace_" + Math.random().toString(36).substr(2, 9),
+        timestamp: new Date().toISOString(),
+        lead_id: lead.id,
+        lead_name: `${lead.first_name} ${lead.last_name}`,
+        node_id: "node_scheduler",
+        agent_name: "GHL Appointment Booker",
+        action: "Booked Discovery Demo in GHL Calendar",
+        state_before: lead.ghl_pipeline_stage,
+        state_after: "appointment_booked",
+        thought_trace: `Successfully synced appointment slot ${date} @ ${time} to GHL sub-account calendar ${ghlConfig.calendar_id}.`,
+        duration_ms: 290,
+      },
+      ...prev,
+    ]);
+
+    confetti({
+      particleCount: 60,
+      spread: 70,
+      origin: { y: 0.6 },
+    });
+
+    showToast(`🎉 Appointment booked on GHL Calendar for ${lead.first_name} on ${date}!`);
+  };
+
+  // -------------------------------------------------------------
+  // Move Lead Stage
+  // -------------------------------------------------------------
+  const handleMoveLeadStage = (leadId: string, stage: GhlPipelineStage) => {
+    const lead = leads.find((l) => l.id === leadId);
+    if (!lead) return;
+
+    const updatedLead: Lead = {
+      ...lead,
+      ghl_pipeline_stage: stage,
+      activity_log: [
+        {
+          id: "act_" + Math.random().toString(36).substr(2, 9),
+          timestamp: new Date().toISOString(),
+          agent: "LangGraph Orchestrator",
+          action: `Advanced GHL Pipeline Stage to: ${stage.replace("_", " ").toUpperCase()}`,
+          details: "Stage transition synchronized with GoHighLevel Opportunity Board.",
+          sentiment: "neutral",
+        },
+        ...lead.activity_log,
+      ],
+    };
+
+    setLeads((prev) => prev.map((l) => (l.id === leadId ? updatedLead : l)));
+    if (selectedLead?.id === leadId) setSelectedLead(updatedLead);
+    showToast(`Stage updated to ${stage.replace("_", " ").toUpperCase()}`);
+  };
+
+  // -------------------------------------------------------------
+  // Run Instant Swarm Loop across leads
+  // -------------------------------------------------------------
+  const handleRunInstantLoop = async () => {
+    setIsProcessing(true);
+    try {
+      const res = await fetch("/api/agent/run-autonomous-loop", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ leads }),
+      });
+      const data = await res.json();
+
+      if (data.updatedLeads && data.updatedLeads.length > 0) {
+        setLeads((prev) => {
+          const map = new Map(data.updatedLeads.map((l: Lead) => [l.id, l]));
+          return prev.map((l) => (map.has(l.id) ? (map.get(l.id) as Lead) : l));
+        });
+      }
+
+      if (data.logs && data.logs.length > 0) {
+        setTraces((prev) => [...data.logs, ...prev]);
+      }
+
+      showToast(`⚡ Autonomous loop cycle completed: ${data.processedCount || 0} leads processed`);
+    } catch (e: any) {
+      console.error(e);
+      showToast("Error running loop: " + e.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // -------------------------------------------------------------
+  // Handle Inbound Webhook Simulation
+  // -------------------------------------------------------------
+  const handleSimulateWebhook = async (payload: any) => {
+    setIsProcessing(true);
+    try {
+      const contact = payload.contact || {};
+      const newLead: Lead = {
+        id: "lead_" + Math.random().toString(36).substr(2, 9),
+        ghl_contact_id: "ghl_cnt_" + Math.floor(100000 + Math.random() * 900000),
+        first_name: contact.first_name || "Anonymous",
+        last_name: contact.last_name || "Lead",
+        email: contact.email || "lead@company.com",
+        phone: contact.phone || "+1 (555) 019-9941",
+        company: contact.company_name || "Prospect Co",
+        title: contact.job_title || "Decision Maker",
+        industry: contact.industry || "B2B Technology",
+        company_size: contact.company_size || "50-200",
+        source: `Webhook: ${payload.event || "Inbound GHL Form"}`,
+        budget_range: contact.budget || "$25k - $50k/mo",
+        deal_value: 35000,
+        pain_points: contact.notes ? [contact.notes] : ["Needs automated appointment booking in GHL"],
+        ghl_pipeline_stage: "new_inbound",
+        ai_score: 0,
+        icp_fit: "B (Standard)",
+        score_breakdown: {
+          intent: 0,
+          authority: 0,
+          budget: 0,
+          timing: 0,
+          need: 0,
+        },
+        tags: ["Inbound-Webhook", payload.event || "GHL"],
+        outreach_status: "pending",
+        created_at: new Date().toISOString(),
+        conversation_history: [],
+        sequence_steps: [],
+        activity_log: [
+          {
+            id: "act_" + Math.random().toString(36).substr(2, 9),
+            timestamp: new Date().toISOString(),
+            agent: "Lead Ingestion Scout",
+            action: `Ingested ${payload.event || "Inbound Webhook"}`,
+            details: `Sanitized contact record for ${contact.company_name || "Lead"}. Enqueued to LangGraph.`,
+            sentiment: "neutral",
+          },
+        ],
+      };
+
+      setLeads((prev) => [newLead, ...prev]);
+
+      // Automatically trigger Claude scoring on this new inbound lead
+      await handleScoreLead(newLead);
+      showToast(`📥 Inbound lead ingested from ${payload.event}: ${newLead.first_name} (${newLead.company})`);
+    } catch (e: any) {
+      console.error(e);
+      showToast("Webhook ingestion error: " + e.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // -------------------------------------------------------------
+  // Background Autonomous Looping Engine
+  // -------------------------------------------------------------
+  useEffect(() => {
+    if (!isLooping) {
+      if (loopTimerRef.current) clearInterval(loopTimerRef.current);
+      return;
+    }
+
+    loopTimerRef.current = setInterval(() => {
+      // Find unscored leads or leads needing touchpoint follow-up
+      const unscored = leads.find((l) => l.ai_score === 0);
+      if (unscored) {
+        handleScoreLead(unscored);
+        return;
+      }
+
+      const needsSequence = leads.find(
+        (l) => l.ghl_pipeline_stage === "scoring_enrichment" && l.sequence_steps.length === 0
+      );
+      if (needsSequence) {
+        handleGenerateSequence(needsSequence);
+      }
+    }, loopIntervalSec * 1000);
+
+    return () => {
+      if (loopTimerRef.current) clearInterval(loopTimerRef.current);
+    };
+  }, [isLooping, loopIntervalSec, leads]);
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 border border-indigo-500/60 text-white text-xs font-semibold px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2 animate-bounce">
+          <span className="w-2 h-2 rounded-full bg-emerald-400" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
+      {/* Main Header & Command Bar */}
+      <Header
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        leads={leads}
+        ghlConfig={ghlConfig}
+        isLooping={isLooping}
+        setIsLooping={setIsLooping}
+        onRunInstantLoop={handleRunInstantLoop}
+        onOpenWebhookModal={() => setActiveTab("webhook_hub")}
+        onOpenNewLeadModal={() => setIsNewLeadModalOpen(true)}
+        loopIntervalSec={loopIntervalSec}
+        setLoopIntervalSec={setLoopIntervalSec}
+        isProcessing={isProcessing}
+      />
+
+      {/* Main App Content View Switcher */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        {activeTab === "langgraph" && (
+          <LangGraphCanvas
+            nodes={nodes}
+            agents={agents}
+            traces={traces}
+            leads={leads}
+            onExecuteNodeOnLead={async (nodeId, leadId) => {
+              const lead = leads.find((l) => l.id === leadId) || leads[0];
+              if (!lead) return;
+              if (nodeId === "node_evaluator") {
+                await handleScoreLead(lead);
+              } else if (nodeId === "node_scribe") {
+                await handleGenerateSequence(lead);
+              } else if (nodeId === "node_closer") {
+                await handleSimulateInboundReply(lead.id, "How soon can we see a live demo of this?");
+              } else if (nodeId === "node_scheduler") {
+                handleBookAppointment(lead.id, "2026-08-18", "14:00");
+              } else {
+                handleRunInstantLoop();
+              }
+            }}
+            isProcessing={isProcessing}
+            selectedLeadId={selectedLead?.id || leads[0]?.id}
+            onSelectLeadId={(id) => {
+              const found = leads.find((l) => l.id === id);
+              if (found) setSelectedLead(found);
+            }}
+          />
+        )}
+
+        {activeTab === "pipeline" && (
+          <GhlPipelineBoard
+            leads={leads}
+            onSelectLead={(lead) => setSelectedLead(lead)}
+            onMoveLeadStage={handleMoveLeadStage}
+            onQuickScoreLead={handleScoreLead}
+            onQuickGenerateSequence={handleGenerateSequence}
+            onOpenNewLeadModal={() => setIsNewLeadModalOpen(true)}
+          />
+        )}
+
+        {activeTab === "leads" && (
+          <LeadsInboxView
+            leads={leads}
+            onSelectLead={(lead) => setSelectedLead(lead)}
+            onQuickScoreLead={handleScoreLead}
+            onOpenNewLeadModal={() => setIsNewLeadModalOpen(true)}
+            isProcessing={isProcessing}
+          />
+        )}
+
+        {activeTab === "routines" && (
+          <AutonomousLoopsView
+            routines={routines}
+            onToggleRoutine={(id) => {
+              setRoutines((prev) =>
+                prev.map((r) => (r.id === id ? { ...r, enabled: !r.enabled } : r))
+              );
+              showToast("Routine status updated");
+            }}
+            onAddRoutine={(newR) => {
+              setRoutines((prev) => [newR as AutomationRoutine, ...prev]);
+              showToast("New autonomous routine created and enqueued!");
+            }}
+            isLooping={isLooping}
+            setIsLooping={setIsLooping}
+            onRunInstantLoop={handleRunInstantLoop}
+            isProcessing={isProcessing}
+            loopIntervalSec={loopIntervalSec}
+            setLoopIntervalSec={setLoopIntervalSec}
+            traces={traces}
+          />
+        )}
+
+        {activeTab === "sequence_studio" && (
+          <SequenceStudio
+            leads={leads}
+            onGenerateCustomSequence={handleGenerateSequence}
+            isProcessing={isProcessing}
+          />
+        )}
+
+        {activeTab === "webhook_hub" && (
+          <GhlWebhookSimulator
+            ghlConfig={ghlConfig}
+            onUpdateConfig={(conf) => {
+              setGhlConfig((prev) => ({ ...prev, ...conf }));
+              showToast("GHL Configuration saved");
+            }}
+            onSimulateWebhook={handleSimulateWebhook}
+            isProcessing={isProcessing}
+          />
+        )}
+
+        {activeTab === "telemetry" && (
+          <TelemetryAnalytics leads={leads} traces={traces} />
+        )}
+      </main>
+
+      {/* Lead Dossier Modal */}
+      {selectedLead && (
+        <LeadDossierModal
+          lead={selectedLead}
+          onClose={() => setSelectedLead(null)}
+          onScoreLead={handleScoreLead}
+          onGenerateSequence={handleGenerateSequence}
+          onSendMessage={handleSendMessage}
+          onSimulateInboundReply={handleSimulateInboundReply}
+          onBookAppointment={handleBookAppointment}
+          onUpdateStage={handleMoveLeadStage}
+          isProcessing={isProcessing}
+        />
+      )}
+
+      {/* New Lead Creation Modal */}
+      <NewLeadModal
+        isOpen={isNewLeadModalOpen}
+        onClose={() => setIsNewLeadModalOpen(false)}
+        onAddLead={(newLead) => {
+          setLeads((prev) => [newLead, ...prev]);
+          showToast(`Added ${newLead.first_name} (${newLead.company}) to pipeline queue`);
+        }}
+      />
+    </div>
+  );
+}
