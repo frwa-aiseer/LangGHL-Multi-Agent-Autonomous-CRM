@@ -1,6 +1,6 @@
 {
   "name": "LangGHL Multi-Agent Autonomous CRM",
-  "description": "Autonomous LangGraph & Claude multi-agent orchestration system for GoHighLevel (GHL) CRM, automating lead generation, scoring, outreach sequences, and appointment setting.",
+  "description": "Polsia-inspired autonomous AI co-founder and multi-agent system orchestrating course sales, high-ticket services, GoHighLevel CRM workflows, and automated pipeline conversion.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

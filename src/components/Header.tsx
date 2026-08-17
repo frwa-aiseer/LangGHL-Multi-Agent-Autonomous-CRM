@@ -68,14 +68,14 @@ export const Header: React.FC<HeaderProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-base font-bold text-white tracking-tight flex items-center gap-1.5">
-                LangGHL <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-mono border border-indigo-500/30">Claude + LangGraph</span>
+                LangGHL <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-mono border border-indigo-500/30">Polsia AI + LangGraph</span>
               </h1>
               <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
                 <Radio className="w-2.5 h-2.5 animate-pulse text-emerald-400" />
-                GHL Sync Active
+                Polsia 24/7 Swarm Active
               </span>
             </div>
-            <p className="text-xs text-slate-400">Autonomous Multi-Agent CRM Pipeline & Appointment Setter</p>
+            <p className="text-xs text-slate-400">Autonomous AI Co-Founder & Multi-Agent Swarm for Courses & Services</p>
           </div>
         </div>
 
@@ -181,6 +181,8 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Navigation Tabs Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-1 overflow-x-auto no-scrollbar border-t border-slate-800/60 pt-1 pb-1">
         {[
+          { id: "polsia_offers", label: "Polsia Offers & Courses", icon: "🎓" },
+          { id: "polsia_sales", label: "AI Sales Desk & Triage", icon: "🎯" },
           { id: "langgraph", label: "LangGraph Multi-Agent Canvas", icon: "🕸️" },
           { id: "pipeline", label: "GHL Pipeline Kanban", icon: "📊" },
           { id: "leads", label: "Prospects & 2-Way Inbox", icon: "👥" },

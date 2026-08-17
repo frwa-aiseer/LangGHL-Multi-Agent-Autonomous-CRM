@@ -10,6 +10,9 @@ import {
   INITIAL_GHL_CONFIG,
   INITIAL_LANGGRAPH_NODES,
   INITIAL_LEADS,
+  INITIAL_MARKETING_CAMPAIGNS,
+  INITIAL_OFFERS,
+  INITIAL_POLSIA_FINANCIALS,
   INITIAL_ROUTINES,
 } from "./data/initialData";
 import {
@@ -20,9 +23,14 @@ import {
   LangGraphExecutionTrace,
   LangGraphNode,
   Lead,
+  MarketingCampaign,
+  OfferItem,
+  PolsiaFinancials,
   SequenceStep,
 } from "./types";
 import { Header } from "./components/Header";
+import { PolsiaOffersHub } from "./components/PolsiaOffersHub";
+import { PolsiaSalesDesk } from "./components/PolsiaSalesDesk";
 import { LangGraphCanvas } from "./components/LangGraphCanvas";
 import { GhlPipelineBoard } from "./components/GhlPipelineBoard";
 import { LeadsInboxView } from "./components/LeadsInboxView";
@@ -35,7 +43,12 @@ import { NewLeadModal } from "./components/NewLeadModal";
 import confetti from "canvas-confetti";
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<string>("langgraph");
+  const [activeTab, setActiveTab] = useState<string>("polsia_offers");
+  const [offers, setOffers] = useState<OfferItem[]>(INITIAL_OFFERS);
+  const [campaigns, setCampaigns] = useState<MarketingCampaign[]>(INITIAL_MARKETING_CAMPAIGNS);
+  const [financials, setFinancials] = useState<PolsiaFinancials>(INITIAL_POLSIA_FINANCIALS);
+  const [selectedOfferForTriage, setSelectedOfferForTriage] = useState<OfferItem | null>(null);
+
   const [leads, setLeads] = useState<Lead[]>(INITIAL_LEADS);
   const [agents, setAgents] = useState<AgentDefinition[]>(INITIAL_AGENTS);
   const [nodes, setNodes] = useState<LangGraphNode[]>(INITIAL_LANGGRAPH_NODES);
@@ -531,6 +544,120 @@ export default function App() {
   };
 
   // -------------------------------------------------------------
+  // Polsia: Autonomous Student Enrollment & Client Purchase Simulator
+  // -------------------------------------------------------------
+  const handleEnrollStudent = (offer: OfferItem) => {
+    const isCourse = offer.type === "course" || offer.type === "cohort";
+    const amount = offer.price;
+    const polsiaCut = amount * 0.20;
+    const netPayout = amount * 0.80;
+
+    // Update Offer stats
+    setOffers((prev) =>
+      prev.map((o) =>
+        o.id === offer.id
+          ? {
+              ...o,
+              student_count: o.student_count + 1,
+              gross_revenue: o.gross_revenue + amount,
+            }
+          : o
+      )
+    );
+
+    // Update Polsia Financials
+    setFinancials((prev) => {
+      const newGross = prev.gross_revenue + amount;
+      const newCourseRev = isCourse ? prev.course_sales_revenue + amount : prev.course_sales_revenue;
+      const newServiceRev = !isCourse ? prev.service_retainer_revenue + amount : prev.service_retainer_revenue;
+      const newMrr = offer.billing_period === "monthly" ? prev.monthly_recurring_revenue + amount : prev.monthly_recurring_revenue;
+      const newCut = prev.polsia_platform_cut + polsiaCut;
+      const newNet = prev.net_founder_payout + netPayout;
+
+      return {
+        ...prev,
+        gross_revenue: newGross,
+        course_sales_revenue: newCourseRev,
+        service_retainer_revenue: newServiceRev,
+        monthly_recurring_revenue: newMrr,
+        total_students_enrolled: isCourse ? prev.total_students_enrolled + 1 : prev.total_students_enrolled,
+        active_service_clients: !isCourse ? prev.active_service_clients + 1 : prev.active_service_clients,
+        polsia_platform_cut: newCut,
+        net_founder_payout: newNet,
+      };
+    });
+
+    // Create a new Lead/Student in GHL
+    const buyerNames = [
+      { first: "Alexander", last: "Wright", company: "GrowthScale AI" },
+      { first: "Sophia", last: "Chen", company: "Aura Media Labs" },
+      { first: "Liam", last: "O'Connor", company: "Apex Automation" },
+      { first: "Chloe", last: "Vanderbilt", company: "Nova Ventures" },
+    ];
+    const picked = buyerNames[Math.floor(Math.random() * buyerNames.length)];
+    const newStudentLead: Lead = {
+      id: "student_" + Math.random().toString(36).substr(2, 9),
+      ghl_contact_id: "ghl_cust_" + Math.random().toString(36).substr(2, 7),
+      first_name: picked.first,
+      last_name: picked.last,
+      email: `${picked.first.toLowerCase()}.${picked.last.toLowerCase()}@${picked.company.toLowerCase().replace(/\s+/g, "")}.com`,
+      phone: "+1 (555) " + Math.floor(100 + Math.random() * 900) + "-" + Math.floor(1000 + Math.random() * 9000),
+      company: picked.company,
+      title: "Founder / CEO",
+      industry: "AI & Digital Services",
+      company_size: "1-10",
+      source: "Polsia Autonomous Funnel",
+      budget_range: `$${amount.toLocaleString()}`,
+      pain_points: ["Scaling without headcount", "Automating GHL client acquisition"],
+      ghl_pipeline_stage: "opportunity_won",
+      deal_value: amount,
+      ai_score: 98,
+      icp_fit: "A+ (Unicorn)",
+      score_breakdown: {
+        intent: 100,
+        authority: 100,
+        budget: 95,
+        timing: 95,
+        need: 100,
+      },
+      tags: [offer.ghl_tag, "Stripe-Paid", isCourse ? "Course-Enrolled" : "Client-Active"],
+      outreach_status: "booked",
+      created_at: new Date().toISOString(),
+      conversation_history: [
+        {
+          id: "msg_paid",
+          sender: "system",
+          channel: "ghl_chat",
+          text: `Stripe payment verified ($${amount.toLocaleString()}). Enrolled into ${offer.title}. GHL access tag [${offer.ghl_tag}] applied.`,
+          timestamp: new Date().toISOString(),
+        },
+      ],
+      sequence_steps: [],
+      activity_log: [
+        {
+          id: "act_paid_" + Math.random().toString(36).substr(2, 9),
+          timestamp: new Date().toISOString(),
+          agent: "Polsia Strategic AI Co-Founder",
+          action: `Enrolled into ${offer.title}`,
+          details: `Processed $${amount.toLocaleString()} purchase. Dispatched instant access email.`,
+          sentiment: "positive",
+        },
+      ],
+    };
+
+    setLeads((prev) => [newStudentLead, ...prev]);
+
+    // Confetti celebration
+    confetti({
+      particleCount: 80,
+      spread: 70,
+      origin: { y: 0.6 },
+    });
+
+    showToast(`🎉 New ${isCourse ? "Student" : "Client"} Enrolled: ${picked.first} (${offer.title} - $${amount})`);
+  };
+
+  // -------------------------------------------------------------
   // Background Autonomous Looping Engine
   // -------------------------------------------------------------
   useEffect(() => {
@@ -588,6 +715,33 @@ export default function App() {
 
       {/* Main App Content View Switcher */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        {activeTab === "polsia_offers" && (
+          <PolsiaOffersHub
+            offers={offers}
+            setOffers={setOffers}
+            campaigns={campaigns}
+            setCampaigns={setCampaigns}
+            financials={financials}
+            setFinancials={setFinancials}
+            onEnrollStudent={handleEnrollStudent}
+            showToast={showToast}
+            onOpenConsultation={(offer) => {
+              if (offer) setSelectedOfferForTriage(offer);
+              setActiveTab("polsia_sales");
+            }}
+          />
+        )}
+
+        {activeTab === "polsia_sales" && (
+          <PolsiaSalesDesk
+            offers={offers}
+            leads={leads}
+            showToast={showToast}
+            onEnrollStudent={handleEnrollStudent}
+            selectedOffer={selectedOfferForTriage}
+          />
+        )}
+
         {activeTab === "langgraph" && (
           <LangGraphCanvas
             nodes={nodes}

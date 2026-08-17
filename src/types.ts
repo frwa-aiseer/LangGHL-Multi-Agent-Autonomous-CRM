@@ -177,3 +177,67 @@ export interface GHLConfig {
     pipeline_value_generated: number;
   };
 }
+
+export type OfferType = "course" | "cohort" | "service_retainer" | "dfy_buildout" | "consulting";
+
+export interface OfferDeliverable {
+  title: string;
+  description: string;
+  type: "video_module" | "template" | "consulting_session" | "code_repository" | "done_for_you_workflow";
+}
+
+export interface OfferItem {
+  id: string;
+  title: string;
+  slug: string;
+  type: OfferType;
+  price: number;
+  billing_period?: "one-time" | "monthly" | "cohort_tier";
+  badge: string;
+  short_description: string;
+  full_description: string;
+  target_icp: string;
+  deliverables: OfferDeliverable[];
+  syllabus?: Array<{
+    module_num: number;
+    title: string;
+    lessons: string[];
+  }>;
+  student_count: number;
+  gross_revenue: number;
+  stripe_checkout_url: string;
+  ghl_tag: string;
+  status: "live" | "draft" | "optimizing_ai";
+  ai_agent_owner: string;
+  conversion_rate: number;
+}
+
+export interface MarketingCampaign {
+  id: string;
+  title: string;
+  offer_id: string;
+  offer_title: string;
+  channel: "linkedin" | "twitter" | "email_newsletter" | "vsl_script" | "meta_ad";
+  hook: string;
+  content: string;
+  cta_url: string;
+  status: "published" | "scheduled" | "ai_draft";
+  generated_at: string;
+  engagement: {
+    impressions: number;
+    clicks: number;
+    conversions: number;
+  };
+}
+
+export interface PolsiaFinancials {
+  gross_revenue: number;
+  course_sales_revenue: number;
+  service_retainer_revenue: number;
+  monthly_recurring_revenue: number;
+  total_students_enrolled: number;
+  active_service_clients: number;
+  polsia_platform_cut: number; // 20%
+  net_founder_payout: number;
+  autonomous_conversion_rate: number;
+}
