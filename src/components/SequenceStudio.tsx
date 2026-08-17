@@ -60,11 +60,11 @@ export const SequenceStudio: React.FC<SequenceStudioProps> = ({
               <Sparkles className="w-5 h-5" />
             </span>
             <h2 className="text-lg font-bold text-white tracking-tight">
-              Claude AI Sequence Studio & Copy Synthesizer
+              AI Email & Follow-Up Writer
             </h2>
           </div>
           <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-2xl">
-            Synthesize high-converting, omni-channel 4-touchpoint campaigns tailored with prospect data, pain points, and GoHighLevel calendar links.
+            Automatically craft tailored outreach emails customized with your lead's company info, industry, and meeting booking link.
           </p>
         </div>
       </div>
@@ -73,10 +73,10 @@ export const SequenceStudio: React.FC<SequenceStudioProps> = ({
         {/* Left Config Controls */}
         <div className="lg:col-span-4 space-y-4">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider">Sequence Prompt Config</h3>
+            <h3 className="text-sm font-bold text-white">Outreach Settings</h3>
 
             <div>
-              <label className="text-xs font-bold text-slate-300 block mb-1">Target Prospect</label>
+              <label className="text-xs font-semibold text-slate-300 block mb-1">Select Contact</label>
               <select
                 value={selectedLeadId}
                 onChange={(e) => setSelectedLeadId(e.target.value)}
@@ -105,44 +105,53 @@ export const SequenceStudio: React.FC<SequenceStudioProps> = ({
                   <span className="text-amber-300 font-semibold">{activeLead.budget_range}</span>
                 </div>
                 <div className="pt-1 border-t border-slate-800 text-[11px] text-slate-400">
-                  <span>Key Need: </span>
+                  <span>Main Need: </span>
                   <span className="text-purple-300">{activeLead.pain_points?.[0] || "Pipeline Automation"}</span>
                 </div>
               </div>
             )}
 
             <div>
-              <label className="text-xs font-bold text-slate-300 block mb-1">Copywriting Style & Persona</label>
+              <label className="text-xs font-semibold text-slate-300 block mb-1">Message Tone</label>
               <select
                 value={toneStyle}
                 onChange={(e) => setToneStyle(e.target.value)}
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none"
               >
-                <option value="Value-First Consultative">Value-First Consultative (Recommended)</option>
-                <option value="Challenger Problem-Solver">Challenger Problem-Solver</option>
-                <option value="Direct No-Fluff Pitch">Direct No-Fluff Pitch</option>
-                <option value="VIP High-Touch Executive">VIP High-Touch Executive</option>
+                <option value="Value-First Consultative">Helpful & Consultative (Recommended)</option>
+                <option value="Challenger Problem-Solver">Direct & Problem-Solving</option>
+                <option value="Direct No-Fluff Pitch">Concise & Action-Oriented</option>
+                <option value="VIP High-Touch Executive">Executive & Professional</option>
               </select>
             </div>
 
             <div>
-              <label className="text-xs font-bold text-slate-300 block mb-1">GHL Calendar Booking Link</label>
+              <label className="text-xs font-semibold text-slate-300 block mb-1">Meeting Booking Link</label>
               <input
                 type="text"
                 value={customLink}
                 onChange={(e) => setCustomLink(e.target.value)}
-                placeholder="https://link.ghlcalendar.com/demo"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white font-mono"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none font-mono text-[11px]"
+                placeholder="https://link.ghlcalendar.com/your-calendar"
               />
             </div>
 
             <button
               onClick={handleGenerate}
               disabled={isProcessing}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-blue-500/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+              className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-indigo-900/40 transition-all disabled:opacity-50"
             >
-              <Sparkles className="w-4 h-4" />
-              <span>{isProcessing ? "Synthesizing Copy..." : "Generate 4-Step Sequence"}</span>
+              {isProcessing ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>Drafting Sequence...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  <span>Generate Follow-Up Sequence</span>
+                </>
+              )}
             </button>
           </div>
         </div>

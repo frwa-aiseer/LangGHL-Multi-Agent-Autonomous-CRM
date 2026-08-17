@@ -29,21 +29,15 @@ import {
   SequenceStep,
 } from "./types";
 import { Header } from "./components/Header";
-import { OperantOffersHub } from "./components/OperantOffersHub";
-import { OperantSalesDesk } from "./components/OperantSalesDesk";
-import { LangGraphCanvas } from "./components/LangGraphCanvas";
-import { GhlPipelineBoard } from "./components/GhlPipelineBoard";
-import { LeadsInboxView } from "./components/LeadsInboxView";
-import { AutonomousLoopsView } from "./components/AutonomousLoopsView";
-import { SequenceStudio } from "./components/SequenceStudio";
-import { GhlWebhookSimulator } from "./components/GhlWebhookSimulator";
-import { TelemetryAnalytics } from "./components/TelemetryAnalytics";
+import { UnifiedProductsView } from "./components/UnifiedProductsView";
+import { UnifiedLeadsAndDeals } from "./components/UnifiedLeadsAndDeals";
+import { UnifiedAutomations } from "./components/UnifiedAutomations";
 import { LeadDossierModal } from "./components/LeadDossierModal";
 import { NewLeadModal } from "./components/NewLeadModal";
 import confetti from "canvas-confetti";
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<string>("operant_offers");
+  const [activeTab, setActiveTab] = useState<string>("deals");
   const [offers, setOffers] = useState<OfferItem[]>(INITIAL_OFFERS);
   const [campaigns, setCampaigns] = useState<MarketingCampaign[]>(INITIAL_MARKETING_CAMPAIGNS);
   const [financials, setFinancials] = useState<PlatformFinancials>(INITIAL_PLATFORM_FINANCIALS);
@@ -706,7 +700,7 @@ export default function App() {
         isLooping={isLooping}
         setIsLooping={setIsLooping}
         onRunInstantLoop={handleRunInstantLoop}
-        onOpenWebhookModal={() => setActiveTab("webhook_hub")}
+        onOpenWebhookModal={() => setActiveTab("automations")}
         onOpenNewLeadModal={() => setIsNewLeadModalOpen(true)}
         loopIntervalSec={loopIntervalSec}
         setLoopIntervalSec={setLoopIntervalSec}
@@ -715,8 +709,9 @@ export default function App() {
 
       {/* Main App Content View Switcher */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        {activeTab === "operant_offers" && (
-          <OperantOffersHub
+        {/* TAB 1: Products & Revenue */}
+        {activeTab === "products" && (
+          <UnifiedProductsView
             offers={offers}
             setOffers={setOffers}
             campaigns={campaigns}
@@ -725,86 +720,33 @@ export default function App() {
             setFinancials={setFinancials}
             onEnrollStudent={handleEnrollStudent}
             showToast={showToast}
-            onOpenConsultation={(offer) => {
-              if (offer) setSelectedOfferForTriage(offer);
-              setActiveTab("operant_sales");
-            }}
-          />
-        )}
-
-        {activeTab === "operant_sales" && (
-          <OperantSalesDesk
-            offers={offers}
+            selectedOfferForTriage={selectedOfferForTriage}
             leads={leads}
-            showToast={showToast}
-            onEnrollStudent={handleEnrollStudent}
-            selectedOffer={selectedOfferForTriage}
           />
         )}
 
-        {activeTab === "langgraph" && (
-          <LangGraphCanvas
-            nodes={nodes}
-            agents={agents}
-            traces={traces}
-            leads={leads}
-            onExecuteNodeOnLead={async (nodeId, leadId) => {
-              const lead = leads.find((l) => l.id === leadId) || leads[0];
-              if (!lead) return;
-              if (nodeId === "node_evaluator") {
-                await handleScoreLead(lead);
-              } else if (nodeId === "node_scribe") {
-                await handleGenerateSequence(lead);
-              } else if (nodeId === "node_closer") {
-                await handleSimulateInboundReply(lead.id, "How soon can we see a live demo of this?");
-              } else if (nodeId === "node_scheduler") {
-                handleBookAppointment(lead.id, "2026-08-18", "14:00");
-              } else {
-                handleRunInstantLoop();
-              }
-            }}
-            isProcessing={isProcessing}
-            selectedLeadId={selectedLead?.id || leads[0]?.id}
-            onSelectLeadId={(id) => {
-              const found = leads.find((l) => l.id === id);
-              if (found) setSelectedLead(found);
-            }}
-          />
-        )}
-
-        {activeTab === "pipeline" && (
-          <GhlPipelineBoard
+        {/* TAB 2: Leads & Deals */}
+        {(activeTab === "deals" || activeTab === "pipeline" || activeTab === "leads") && (
+          <UnifiedLeadsAndDeals
             leads={leads}
             onSelectLead={(lead) => setSelectedLead(lead)}
             onMoveLeadStage={handleMoveLeadStage}
             onQuickScoreLead={handleScoreLead}
             onQuickGenerateSequence={handleGenerateSequence}
             onOpenNewLeadModal={() => setIsNewLeadModalOpen(true)}
-          />
-        )}
-
-        {activeTab === "leads" && (
-          <LeadsInboxView
-            leads={leads}
-            onSelectLead={(lead) => setSelectedLead(lead)}
-            onQuickScoreLead={handleScoreLead}
-            onOpenNewLeadModal={() => setIsNewLeadModalOpen(true)}
             isProcessing={isProcessing}
           />
         )}
 
-        {activeTab === "routines" && (
-          <AutonomousLoopsView
+        {/* TAB 3: Automations & AI Team */}
+        {(activeTab === "automations" || activeTab === "routines" || activeTab === "langgraph" || activeTab === "webhook_hub" || activeTab === "telemetry") && (
+          <UnifiedAutomations
             routines={routines}
             onToggleRoutine={(id) => {
               setRoutines((prev) =>
                 prev.map((r) => (r.id === id ? { ...r, enabled: !r.enabled } : r))
               );
-              showToast("Routine status updated");
-            }}
-            onAddRoutine={(newR) => {
-              setRoutines((prev) => [newR as AutomationRoutine, ...prev]);
-              showToast("New autonomous routine created and enqueued!");
+              showToast("Automation status updated");
             }}
             isLooping={isLooping}
             setIsLooping={setIsLooping}
@@ -813,31 +755,10 @@ export default function App() {
             loopIntervalSec={loopIntervalSec}
             setLoopIntervalSec={setLoopIntervalSec}
             traces={traces}
-          />
-        )}
-
-        {activeTab === "sequence_studio" && (
-          <SequenceStudio
             leads={leads}
-            onGenerateCustomSequence={handleGenerateSequence}
-            isProcessing={isProcessing}
-          />
-        )}
-
-        {activeTab === "webhook_hub" && (
-          <GhlWebhookSimulator
-            ghlConfig={ghlConfig}
-            onUpdateConfig={(conf) => {
-              setGhlConfig((prev) => ({ ...prev, ...conf }));
-              showToast("GHL Configuration saved");
-            }}
             onSimulateWebhook={handleSimulateWebhook}
-            isProcessing={isProcessing}
+            showToast={showToast}
           />
-        )}
-
-        {activeTab === "telemetry" && (
-          <TelemetryAnalytics leads={leads} traces={traces} />
         )}
       </main>
 

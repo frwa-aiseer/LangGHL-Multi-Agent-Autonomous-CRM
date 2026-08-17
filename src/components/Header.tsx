@@ -179,40 +179,45 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Navigation Tabs Bar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-1 overflow-x-auto no-scrollbar border-t border-slate-800/60 pt-1 pb-1">
-        {[
-          { id: "operant_offers", label: "Offers & Programs", icon: "🎓" },
-          { id: "operant_sales", label: "AI Sales & Triage", icon: "🎯" },
-          { id: "langgraph", label: "Multi-Agent Canvas", icon: "🕸️" },
-          { id: "pipeline", label: "Pipeline Kanban", icon: "📊" },
-          { id: "leads", label: "Prospects & 2-Way Inbox", icon: "👥" },
-          { id: "routines", label: "Autonomous Loops", icon: "🔄" },
-          { id: "sequence_studio", label: "Sequence Studio", icon: "✍️" },
-          { id: "webhook_hub", label: "Webhook Simulator", icon: "⚡" },
-          { id: "telemetry", label: "Agent Traces & Telemetry", icon: "📈" },
-        ].map((tab) => {
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              id={`nav-tab-${tab.id}`}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-lg whitespace-nowrap transition-all ${
-                isActive
-                  ? "bg-indigo-600/20 text-indigo-300 border border-indigo-500/40 shadow-inner"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
-              }`}
-            >
-              <span>{tab.icon}</span>
-              <span>{tab.label}</span>
-              {tab.id === "pipeline" && (
-                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-800 text-slate-300">
-                  {leads.length}
-                </span>
-              )}
-            </button>
-          );
-        })}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between border-t border-slate-800/80 pt-2 pb-2">
+        <div className="flex items-center gap-2">
+          {[
+            { id: "products", label: "Products & Revenue", icon: "🏷️", count: null },
+            { id: "deals", label: "Leads & Deals", icon: "👥", count: leads.length },
+            { id: "automations", label: "Automations & AI Team", icon: "⚡", count: null },
+          ].map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                id={`nav-tab-${tab.id}`}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl transition-all ${
+                  isActive
+                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-900/40"
+                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+                }`}
+              >
+                <span>{tab.icon}</span>
+                <span>{tab.label}</span>
+                {tab.count !== null && (
+                  <span
+                    className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                      isActive ? "bg-indigo-700/80 text-white" : "bg-slate-800 text-slate-300"
+                    }`}
+                  >
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="hidden sm:flex items-center gap-2 text-xs text-slate-400">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span>All systems operational</span>
+        </div>
       </div>
     </header>
   );

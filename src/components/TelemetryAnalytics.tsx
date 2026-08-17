@@ -49,28 +49,28 @@ export const TelemetryAnalytics: React.FC<TelemetryAnalyticsProps> = ({
 
   const funnelData = [
     { name: "Inbound Leads", count: leads.length, fill: "#f59e0b" },
-    { name: "Claude Enriched", count: stageCounts.scoring_enrichment + stageCounts.active_sequence + stageCounts.engaged_objection + stageCounts.appointment_booked + stageCounts.opportunity_won, fill: "#a855f7" },
-    { name: "Active Sequence", count: stageCounts.active_sequence + stageCounts.engaged_objection + stageCounts.appointment_booked + stageCounts.opportunity_won, fill: "#3b82f6" },
-    { name: "Objection Handling", count: stageCounts.engaged_objection + stageCounts.appointment_booked + stageCounts.opportunity_won, fill: "#6366f1" },
+    { name: "Qualified Leads", count: stageCounts.scoring_enrichment + stageCounts.active_sequence + stageCounts.engaged_objection + stageCounts.appointment_booked + stageCounts.opportunity_won, fill: "#a855f7" },
+    { name: "In Outreach", count: stageCounts.active_sequence + stageCounts.engaged_objection + stageCounts.appointment_booked + stageCounts.opportunity_won, fill: "#3b82f6" },
+    { name: "Active Chat", count: stageCounts.engaged_objection + stageCounts.appointment_booked + stageCounts.opportunity_won, fill: "#6366f1" },
     { name: "Booked Demos", count: stageCounts.appointment_booked + stageCounts.opportunity_won, fill: "#10b981" },
-    { name: "Opportunities Won", count: stageCounts.opportunity_won, fill: "#14b8a6" },
+    { name: "Closed Sales", count: stageCounts.opportunity_won, fill: "#14b8a6" },
   ];
 
   const icpData = [
-    { name: "A+ (Unicorn)", count: leads.filter((l) => l.icp_fit === "A+ (Unicorn)").length, color: "#a855f7" },
-    { name: "A (Prime)", count: leads.filter((l) => l.icp_fit === "A (Prime)").length, color: "#3b82f6" },
-    { name: "B (Standard)", count: leads.filter((l) => l.icp_fit === "B (Standard)").length, color: "#f59e0b" },
-    { name: "C (Low Fit)", count: leads.filter((l) => l.icp_fit === "C (Low Priority)").length, color: "#64748b" },
+    { name: "Ready to Buy (High Intent)", count: leads.filter((l) => l.icp_fit === "A+ (Unicorn)").length, color: "#a855f7" },
+    { name: "Qualified Fit", count: leads.filter((l) => l.icp_fit === "A (Prime)").length, color: "#3b82f6" },
+    { name: "Moderate Fit", count: leads.filter((l) => l.icp_fit === "B (Standard)").length, color: "#f59e0b" },
+    { name: "Low Priority / Nurture", count: leads.filter((l) => l.icp_fit === "C (Low Priority)").length, color: "#64748b" },
   ];
 
   const latencyData = [
-    { agent: "Scout Ingest", latency: 180 },
-    { agent: "Claude Scoring", latency: 420 },
-    { agent: "Graph Router", latency: 85 },
-    { agent: "Claude Scribe", latency: 490 },
-    { agent: "GHL Dispatch", latency: 210 },
-    { agent: "Objection Closer", latency: 390 },
-    { agent: "GHL Calendar", latency: 280 },
+    { agent: "Lead Intake", latency: 180 },
+    { agent: "Lead Scoring", latency: 420 },
+    { agent: "Smart Routing", latency: 85 },
+    { agent: "Email Drafter", latency: 490 },
+    { agent: "CRM Sync", latency: 210 },
+    { agent: "Objection Solver", latency: 390 },
+    { agent: "Calendar Booking", latency: 280 },
   ];
 
   const totalRevenue = leads.reduce((acc, l) => acc + (l.deal_value || 0), 0);
@@ -87,11 +87,11 @@ export const TelemetryAnalytics: React.FC<TelemetryAnalyticsProps> = ({
               <BarChart3 className="w-5 h-5" />
             </span>
             <h2 className="text-lg font-bold text-white tracking-tight">
-              Agent Telemetry & Pipeline Performance Intelligence
+              Pipeline & Sales Performance
             </h2>
           </div>
           <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-2xl">
-            Real-time multi-agent execution analytics, SLA response benchmarks, conversion funnels, and token metrics.
+            Live metrics on lead qualification, response speed, meeting conversions, and closed deal volume.
           </p>
         </div>
       </div>

@@ -35,7 +35,7 @@ const PIPELINE_COLUMNS: Array<{
 }> = [
   {
     stage: "new_inbound",
-    title: "New Inbound Leads",
+    title: "New Inquiries",
     badgeBg: "bg-amber-500/10",
     badgeText: "text-amber-400",
     borderColor: "border-amber-500/30",
@@ -43,15 +43,15 @@ const PIPELINE_COLUMNS: Array<{
   },
   {
     stage: "scoring_enrichment",
-    title: "Claude ICP Enriched",
+    title: "Qualified Leads",
     badgeBg: "bg-purple-500/10",
     badgeText: "text-purple-400",
     borderColor: "border-purple-500/30",
-    icon: "🧠",
+    icon: "🎯",
   },
   {
     stage: "active_sequence",
-    title: "Active Sequence (Email/SMS)",
+    title: "In Outreach",
     badgeBg: "bg-blue-500/10",
     badgeText: "text-blue-400",
     borderColor: "border-blue-500/30",
@@ -59,7 +59,7 @@ const PIPELINE_COLUMNS: Array<{
   },
   {
     stage: "engaged_objection",
-    title: "Engaged / Objection Solving",
+    title: "Active Chat",
     badgeBg: "bg-indigo-500/10",
     badgeText: "text-indigo-400",
     borderColor: "border-indigo-500/30",
@@ -67,7 +67,7 @@ const PIPELINE_COLUMNS: Array<{
   },
   {
     stage: "appointment_booked",
-    title: "Appointment Booked / Demo",
+    title: "Demo Booked",
     badgeBg: "bg-emerald-500/10",
     badgeText: "text-emerald-400",
     borderColor: "border-emerald-500/30",
@@ -75,7 +75,7 @@ const PIPELINE_COLUMNS: Array<{
   },
   {
     stage: "opportunity_won",
-    title: "Opportunity Won ($)",
+    title: "Won & Paid",
     badgeBg: "bg-teal-500/10",
     badgeText: "text-teal-400",
     borderColor: "border-teal-500/30",
@@ -97,23 +97,23 @@ export const GhlPipelineBoard: React.FC<GhlPipelineBoardProps> = ({
       <div className="flex flex-wrap items-center justify-between gap-4 bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-lg backdrop-blur">
         <div>
           <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <span>GoHighLevel Live Opportunity Pipeline</span>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono border border-emerald-500/30">
-              Autonomous Sync
+            <span>Deals & Opportunity Pipeline</span>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-medium border border-emerald-500/30">
+              Live Sync
             </span>
           </h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            Real-time GHL custom stage board with Claude scoring, automated stage routing, and calendar slot booking.
+            Track deal stages from initial inquiry to qualified meetings and closed sales.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <button
             onClick={onOpenNewLeadModal}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md shadow-indigo-900/40 transition-all"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md shadow-indigo-900/40 transition-all"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>Add Prospect</span>
+            <span>+ Add New Lead</span>
           </button>
         </div>
       </div>

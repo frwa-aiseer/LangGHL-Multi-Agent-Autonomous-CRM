@@ -27,60 +27,189 @@ function getGenAI(): GoogleGenAI | null {
   return genAIClient;
 }
 
-// Resilient AI generation helper with multi-model fallback & intelligent heuristic safety net
+// Resilient Multi-LLM AI generation helper supporting Gemini, Claude (Anthropic), and Codex/OpenAI
+let lastGeminiRateLimitTime = 0;
+const RATE_LIMIT_COOLDOWN_MS = 20000; // 20-second circuit breaker cooldown on 429s
+
+async function generateClaudeResponse(prompt: string): Promise<string | null> {
+  const apiKey = process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY;
+  if (!apiKey) return null;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: "claude-3-7-sonnet-20250219",
+        max_tokens: 1500,
+        messages: [{ role: "user", content: prompt }],
+      }),
+    });
+    if (!res.ok) return null;
+    const data: any = await res.json();
+    return data.content?.[0]?.text || null;
+  } catch (err) {
+    return null;
+  }
+}
+
+async function generateCodexOpenAIResponse(prompt: string): Promise<string | null> {
+  const apiKey = process.env.OPENAI_API_KEY || process.env.CODEX_API_KEY;
+  if (!apiKey) return null;
+
+  try {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-4o",
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: "You are an autonomous CRM & monetization intelligence engine. Always reply with valid JSON." },
+          { role: "user", content: prompt },
+        ],
+      }),
+    });
+    if (!res.ok) return null;
+    const data: any = await res.json();
+    return data.choices?.[0]?.message?.content || null;
+  } catch (err) {
+    return null;
+  }
+}
+
+// Resilient AI generation helper with multi-model cascade (Gemini, Claude, Codex/OpenAI) & intelligent heuristic safety net
 async function generateAiJsonWithFallback<T>(
   prompt: string,
-  fallbackFn: () => T
+  fallbackFn: () => T,
+  preferredProvider?: "gemini" | "claude" | "codex"
 ): Promise<T> {
-  const ai = getGenAI();
-  if (!ai) {
-    return fallbackFn();
-  }
-
-  const candidateModels = [
-    "gemini-3.7-flash",
-    "gemini-flash-latest",
-    "gemini-3.1-flash-lite",
-  ];
-
-  for (const model of candidateModels) {
+  // If Claude is explicitly preferred or key is provided
+  if (preferredProvider === "claude" || process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY) {
     try {
-      const response = await ai.models.generateContent({
-        model,
-        contents: prompt,
-        config: {
-          responseMimeType: "application/json",
-        },
-      });
-
-      const text = response.text?.trim() || "";
-      if (text) {
-        // Strip markdown backticks if returned
-        const cleaned = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
-        const parsed = JSON.parse(cleaned);
-        return parsed as T;
+      const claudeText = await generateClaudeResponse(prompt);
+      if (claudeText) {
+        const cleaned = claudeText.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+        return JSON.parse(cleaned) as T;
       }
-    } catch (err: any) {
-      console.warn(`[AI Engine] Attempt with ${model} failed (${err.status || err.message}). Trying next fallback...`);
-      // If 503 or 429, wait 250ms before trying the next model
-      await new Promise((resolve) => setTimeout(resolve, 250));
+    } catch {
+      // Fall through to other providers
     }
   }
 
-  // Gracefully fallback to high-quality heuristic synthesis when upstream models experience temporary spikes
-  console.log("[AI Engine] Upstream models unavailable. Utilizing expert heuristic fallback generator.");
+  // If Codex/OpenAI is explicitly preferred
+  if (preferredProvider === "codex" || (!process.env.GEMINI_API_KEY && (process.env.OPENAI_API_KEY || process.env.CODEX_API_KEY))) {
+    try {
+      const codexText = await generateCodexOpenAIResponse(prompt);
+      if (codexText) {
+        const cleaned = codexText.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+        return JSON.parse(cleaned) as T;
+      }
+    } catch {
+      // Fall through to Gemini / Heuristic
+    }
+  }
+
+  // Primary: Gemini SDK (Skip if currently in 429 rate-limit cooldown)
+  const isCooldownActive = Date.now() - lastGeminiRateLimitTime < RATE_LIMIT_COOLDOWN_MS;
+  const ai = !isCooldownActive ? getGenAI() : null;
+
+  if (ai) {
+    const candidateModels = [
+      "gemini-2.5-flash",
+      "gemini-2.5-pro",
+    ];
+
+    for (const model of candidateModels) {
+      try {
+        const response = await ai.models.generateContent({
+          model,
+          contents: prompt,
+          config: {
+            responseMimeType: "application/json",
+          },
+        });
+
+        const text = response.text?.trim() || "";
+        if (text) {
+          const cleaned = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+          const parsed = JSON.parse(cleaned);
+          return parsed as T;
+        }
+      } catch (err: any) {
+        const isRateLimit =
+          err?.status === 429 ||
+          err?.message?.includes("429") ||
+          err?.message?.includes("RESOURCE_EXHAUSTED") ||
+          err?.message?.includes("Quota exceeded");
+
+        if (isRateLimit) {
+          lastGeminiRateLimitTime = Date.now();
+          // Stop hammering the API when rate-limited
+          break;
+        }
+      }
+    }
+  }
+
+  // Try Codex as secondary fallback if not tried earlier
+  if (process.env.OPENAI_API_KEY || process.env.CODEX_API_KEY) {
+    try {
+      const codexText = await generateCodexOpenAIResponse(prompt);
+      if (codexText) {
+        const cleaned = codexText.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+        return JSON.parse(cleaned) as T;
+      }
+    } catch {}
+  }
+
+  // Gracefully fallback to high-quality heuristic synthesis
   return fallbackFn();
 }
 
 // -------------------------------------------------------------
-// API: Health Check
+// API: Health Check & Multi-LLM Provider Status
 // -------------------------------------------------------------
 app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
-    hasApiKey: !!process.env.GEMINI_API_KEY,
+    providers: {
+      gemini: {
+        name: "Google Gemini 2.5/3.7",
+        configured: !!process.env.GEMINI_API_KEY,
+        role: "Real-time Lead Scoring & Inbound Qualification",
+      },
+      claude: {
+        name: "Anthropic Claude 3.7 Sonnet",
+        configured: !!(process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY),
+        role: "Reasoning, High-Ticket Negotiation & Sales Triage",
+      },
+      codex: {
+        name: "OpenAI GPT-4o / Codex",
+        configured: !!(process.env.OPENAI_API_KEY || process.env.CODEX_API_KEY),
+        role: "Workflow Code Synthesis & Webhook Automations",
+      },
+    },
+    hasApiKey: !!(process.env.GEMINI_API_KEY || process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY || process.env.OPENAI_API_KEY || process.env.CODEX_API_KEY),
     timestamp: new Date().toISOString(),
     system: "Operant AI Multi-Agent Autonomous CRM & Monetization Operating System",
+  });
+});
+
+app.get("/api/providers/status", (req, res) => {
+  res.json({
+    active_providers: [
+      { id: "gemini", name: "Gemini API (Google)", status: process.env.GEMINI_API_KEY ? "connected" : "ready_with_fallback" },
+      { id: "claude", name: "Claude API (Anthropic)", status: (process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY) ? "connected" : "ready_with_fallback" },
+      { id: "codex", name: "Codex / OpenAI API", status: (process.env.OPENAI_API_KEY || process.env.CODEX_API_KEY) ? "connected" : "ready_with_fallback" },
+    ],
   });
 });
 

@@ -128,10 +128,10 @@ export const LeadDossierModal: React.FC<LeadDossierModalProps> = ({
         {/* Modal Navigation Tabs */}
         <div className="flex items-center gap-2 border-b border-slate-800 px-6 pt-2 bg-slate-950/40">
           {[
-            { id: "conversation", label: "2-Way Inbox & Objection Loop", icon: MessageSquare },
-            { id: "scoring", label: "Claude AI Scoring Diagnostics", icon: Brain },
-            { id: "sequence", label: "Personalized Outreach Sequence", icon: Mail },
-            { id: "activity", label: "Agent Activity Audit Trail", icon: Clock },
+            { id: "conversation", label: "Messages & Chat", icon: MessageSquare },
+            { id: "scoring", label: "Lead Score & Insights", icon: Brain },
+            { id: "sequence", label: "Email Sequences", icon: Mail },
+            { id: "activity", label: "Activity History", icon: Clock },
           ].map((tab) => {
             const Icon = tab.icon;
             const isSelected = activeTab === tab.id;
