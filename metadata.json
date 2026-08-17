@@ -1,6 +1,6 @@
 {
-  "name": "LangGHL Multi-Agent Autonomous CRM",
-  "description": "Polsia-inspired autonomous AI co-founder and multi-agent system orchestrating course sales, high-ticket services, GoHighLevel CRM workflows, and automated pipeline conversion.",
+  "name": "Operant AI - Autonomous CRM & Monetization Operating System",
+  "description": "Minimalist, high-performance autonomous AI CRM and multi-agent monetization engine for scaling courses, high-ticket services, and GoHighLevel pipeline conversions.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

@@ -10,7 +10,7 @@ import {
 export const INITIAL_AGENTS: AgentDefinition[] = [
   {
     id: "agent_cofounder",
-    name: "Polsia Strategic AI Co-Founder",
+    name: "Operant Strategic AI Co-Founder",
     role: "Autonomous CEO & Growth Director",
     brain: "Claude 3.7 Sonnet (Reasoning)",
     avatar: "👑",
@@ -878,7 +878,7 @@ export const INITIAL_OFFERS: import("../types").OfferItem[] = [
     ],
     student_count: 142,
     gross_revenue: 70574,
-    stripe_checkout_url: "https://buy.stripe.com/polsia_ai_masterclass_497",
+    stripe_checkout_url: "https://buy.stripe.com/operant_ai_masterclass_497",
     ghl_tag: "Student-Masterclass-Enrolled",
     status: "live",
     ai_agent_owner: "Claude Copy Scribe & Curriculum Agent",
@@ -909,10 +909,10 @@ export const INITIAL_OFFERS: import("../types").OfferItem[] = [
     ],
     student_count: 48,
     gross_revenue: 71856,
-    stripe_checkout_url: "https://buy.stripe.com/polsia_ai_cohort_1497",
+    stripe_checkout_url: "https://buy.stripe.com/operant_ai_cohort_1497",
     ghl_tag: "Cohort-4-Member",
     status: "live",
-    ai_agent_owner: "Polsia Strategic AI Co-Founder",
+    ai_agent_owner: "Operant Strategic AI Co-Founder",
     conversion_rate: 12.1,
   },
   {
@@ -945,7 +945,7 @@ export const INITIAL_OFFERS: import("../types").OfferItem[] = [
     ],
     student_count: 18,
     gross_revenue: 89946,
-    stripe_checkout_url: "https://buy.stripe.com/polsia_dfy_buildout_4997",
+    stripe_checkout_url: "https://buy.stripe.com/operant_dfy_buildout_4997",
     ghl_tag: "Client-DFY-Active",
     status: "live",
     ai_agent_owner: "Objection Handling Closer",
@@ -959,7 +959,7 @@ export const INITIAL_OFFERS: import("../types").OfferItem[] = [
     price: 12500,
     billing_period: "monthly",
     badge: "Enterprise • Full Autonomy",
-    short_description: "Polsia-inspired 24/7 AI executive team managing your entire course marketing, outbound outreach, student success, and revenue operations.",
+    short_description: "Enterprise-grade 24/7 AI executive team managing your entire course marketing, outbound outreach, student success, and revenue operations.",
     full_description: "Complete business automation layer. AI agents continuously publish multi-channel content, qualify enterprise leads, close course sales, triage high-ticket retainers, and deliver weekly C-suite financial reports.",
     target_icp: "High-growth education brands, 7-figure creators, and SaaS platforms looking to replace operational headcount.",
     deliverables: [
@@ -976,10 +976,10 @@ export const INITIAL_OFFERS: import("../types").OfferItem[] = [
     ],
     student_count: 6,
     gross_revenue: 75000,
-    stripe_checkout_url: "https://buy.stripe.com/polsia_enterprise_retainer_12500",
+    stripe_checkout_url: "https://buy.stripe.com/operant_enterprise_retainer_12500",
     ghl_tag: "Client-Enterprise-Retainer",
     status: "live",
-    ai_agent_owner: "Polsia Strategic AI Co-Founder",
+    ai_agent_owner: "Operant Strategic AI Co-Founder",
     conversion_rate: 6.2,
   },
   {
@@ -1002,7 +1002,7 @@ export const INITIAL_OFFERS: import("../types").OfferItem[] = [
     ],
     student_count: 9,
     gross_revenue: 22500,
-    stripe_checkout_url: "https://buy.stripe.com/polsia_advisory_2500",
+    stripe_checkout_url: "https://buy.stripe.com/operant_advisory_2500",
     ghl_tag: "Client-Advisory-Monthly",
     status: "live",
     ai_agent_owner: "Claude Lead Evaluator",
@@ -1018,8 +1018,8 @@ export const INITIAL_MARKETING_CAMPAIGNS: import("../types").MarketingCampaign[]
     offer_title: "Autonomous AI Agent Architecture Masterclass",
     channel: "linkedin",
     hook: "Most agency founders spend 4 hours a day chasing leads in GoHighLevel. Here's how our autonomous LangGraph swarm does it in 45 seconds:",
-    content: "If you're still paying 3 SDRs to copy-paste messages into CRM pipelines, you're competing against autonomous systems that never sleep.\n\nWe built a multi-agent framework where:\n1. Claude Evaluator qualifies incoming leads in <3s\n2. Copy Scribe synthesizes personalized 4-touchpoint emails\n3. Closer Agent handles pricing objections in real-time\n4. Scheduler locks the demo directly into Google Calendar\n\nCheck out the full 40-lesson Masterclass breakdown here: https://buy.stripe.com/polsia_ai_masterclass_497",
-    cta_url: "https://buy.stripe.com/polsia_ai_masterclass_497",
+    content: "If you're still paying 3 SDRs to copy-paste messages into CRM pipelines, you're competing against autonomous systems that never sleep.\n\nWe built a multi-agent framework where:\n1. Claude Evaluator qualifies incoming leads in <3s\n2. Copy Scribe synthesizes personalized 4-touchpoint emails\n3. Closer Agent handles pricing objections in real-time\n4. Scheduler locks the demo directly into Google Calendar\n\nCheck out the full 40-lesson Masterclass breakdown here: https://buy.stripe.com/operant_ai_masterclass_497",
+    cta_url: "https://buy.stripe.com/operant_ai_masterclass_497",
     status: "published",
     generated_at: "2026-08-16T14:20:00Z",
     engagement: {
@@ -1030,12 +1030,12 @@ export const INITIAL_MARKETING_CAMPAIGNS: import("../types").MarketingCampaign[]
   },
   {
     id: "camp_2",
-    title: "Polsia-Style Business Automation Breakdown (Twitter/X)",
+    title: "Autonomous Business CRM Architecture Breakdown (Twitter/X)",
     offer_id: "offer_service_1",
     offer_title: "Done-For-You GHL + Multi-Agent CRM Infrastructure",
     channel: "twitter",
     hook: "How to run a $50k/mo course & service business with 0 employees using Claude + LangGraph. A full breakdown 🧵👇",
-    content: "1/ The traditional agency model is broken: hiring SDRs, high churn, manual follow-ups.\n\n2/ Polsia proved you can automate entire business lifecycles. We took that further for GoHighLevel CRM.\n\n3/ Our Done-For-You service deploys a dedicated 4-node swarm directly into your sub-account in 14 days.\n\nBook a live pipeline audit: https://link.ghlcalendar.com/discovery-demo",
+    content: "1/ The traditional agency model is broken: hiring SDRs, high churn, manual follow-ups.\n\n2/ Modern AI allows you to automate entire business lifecycles directly within GoHighLevel CRM.\n\n3/ Our Done-For-You service deploys a dedicated 4-node swarm directly into your sub-account in 14 days.\n\nBook a live pipeline audit: https://link.ghlcalendar.com/discovery-demo",
     cta_url: "https://link.ghlcalendar.com/discovery-demo",
     status: "published",
     generated_at: "2026-08-16T11:15:00Z",
@@ -1053,7 +1053,7 @@ export const INITIAL_MARKETING_CAMPAIGNS: import("../types").MarketingCampaign[]
     channel: "vsl_script",
     hook: "[VIDEO HOOK] Stop losing $10k+ deals because your follow-up took 3 hours instead of 3 minutes.",
     content: "In this 8-minute presentation, I will show you the exact multi-agent architecture our cohort students use to book 15-25 qualified high-ticket discovery calls every single week without running manual ads or sending generic spam...",
-    cta_url: "https://buy.stripe.com/polsia_ai_cohort_1497",
+    cta_url: "https://buy.stripe.com/operant_ai_cohort_1497",
     status: "ai_draft",
     generated_at: "2026-08-16T16:00:00Z",
     engagement: {
@@ -1064,14 +1064,17 @@ export const INITIAL_MARKETING_CAMPAIGNS: import("../types").MarketingCampaign[]
   },
 ];
 
-export const INITIAL_POLSIA_FINANCIALS: import("../types").PolsiaFinancials = {
+export const INITIAL_PLATFORM_FINANCIALS: import("../types").PlatformFinancials = {
   gross_revenue: 334876,
   course_sales_revenue: 142430,
   service_retainer_revenue: 192446,
   monthly_recurring_revenue: 48500,
   total_students_enrolled: 190,
   active_service_clients: 33,
-  polsia_platform_cut: 66975.20, // 20%
+  platform_cut: 66975.20, // 20%
   net_founder_payout: 267900.80,
   autonomous_conversion_rate: 14.8,
 };
+
+export const INITIAL_POLSIA_FINANCIALS = INITIAL_PLATFORM_FINANCIALS;
+

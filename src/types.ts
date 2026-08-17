@@ -230,14 +230,18 @@ export interface MarketingCampaign {
   };
 }
 
-export interface PolsiaFinancials {
+export interface PlatformFinancials {
   gross_revenue: number;
   course_sales_revenue: number;
   service_retainer_revenue: number;
   monthly_recurring_revenue: number;
   total_students_enrolled: number;
   active_service_clients: number;
-  polsia_platform_cut: number; // 20%
+  platform_cut: number; // 20%
   net_founder_payout: number;
   autonomous_conversion_rate: number;
 }
+
+// Backward compatibility alias
+export type PolsiaFinancials = PlatformFinancials;
+

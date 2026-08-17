@@ -12,7 +12,7 @@ import {
   INITIAL_LEADS,
   INITIAL_MARKETING_CAMPAIGNS,
   INITIAL_OFFERS,
-  INITIAL_POLSIA_FINANCIALS,
+  INITIAL_PLATFORM_FINANCIALS,
   INITIAL_ROUTINES,
 } from "./data/initialData";
 import {
@@ -25,12 +25,12 @@ import {
   Lead,
   MarketingCampaign,
   OfferItem,
-  PolsiaFinancials,
+  PlatformFinancials,
   SequenceStep,
 } from "./types";
 import { Header } from "./components/Header";
-import { PolsiaOffersHub } from "./components/PolsiaOffersHub";
-import { PolsiaSalesDesk } from "./components/PolsiaSalesDesk";
+import { OperantOffersHub } from "./components/OperantOffersHub";
+import { OperantSalesDesk } from "./components/OperantSalesDesk";
 import { LangGraphCanvas } from "./components/LangGraphCanvas";
 import { GhlPipelineBoard } from "./components/GhlPipelineBoard";
 import { LeadsInboxView } from "./components/LeadsInboxView";
@@ -43,10 +43,10 @@ import { NewLeadModal } from "./components/NewLeadModal";
 import confetti from "canvas-confetti";
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<string>("polsia_offers");
+  const [activeTab, setActiveTab] = useState<string>("operant_offers");
   const [offers, setOffers] = useState<OfferItem[]>(INITIAL_OFFERS);
   const [campaigns, setCampaigns] = useState<MarketingCampaign[]>(INITIAL_MARKETING_CAMPAIGNS);
-  const [financials, setFinancials] = useState<PolsiaFinancials>(INITIAL_POLSIA_FINANCIALS);
+  const [financials, setFinancials] = useState<PlatformFinancials>(INITIAL_PLATFORM_FINANCIALS);
   const [selectedOfferForTriage, setSelectedOfferForTriage] = useState<OfferItem | null>(null);
 
   const [leads, setLeads] = useState<Lead[]>(INITIAL_LEADS);
@@ -544,12 +544,12 @@ export default function App() {
   };
 
   // -------------------------------------------------------------
-  // Polsia: Autonomous Student Enrollment & Client Purchase Simulator
+  // Autonomous Student Enrollment & Client Purchase Simulator
   // -------------------------------------------------------------
   const handleEnrollStudent = (offer: OfferItem) => {
     const isCourse = offer.type === "course" || offer.type === "cohort";
     const amount = offer.price;
-    const polsiaCut = amount * 0.20;
+    const platformCut = amount * 0.20;
     const netPayout = amount * 0.80;
 
     // Update Offer stats
@@ -565,13 +565,13 @@ export default function App() {
       )
     );
 
-    // Update Polsia Financials
+    // Update Financials
     setFinancials((prev) => {
       const newGross = prev.gross_revenue + amount;
       const newCourseRev = isCourse ? prev.course_sales_revenue + amount : prev.course_sales_revenue;
       const newServiceRev = !isCourse ? prev.service_retainer_revenue + amount : prev.service_retainer_revenue;
       const newMrr = offer.billing_period === "monthly" ? prev.monthly_recurring_revenue + amount : prev.monthly_recurring_revenue;
-      const newCut = prev.polsia_platform_cut + polsiaCut;
+      const newCut = prev.platform_cut + platformCut;
       const newNet = prev.net_founder_payout + netPayout;
 
       return {
@@ -582,7 +582,7 @@ export default function App() {
         monthly_recurring_revenue: newMrr,
         total_students_enrolled: isCourse ? prev.total_students_enrolled + 1 : prev.total_students_enrolled,
         active_service_clients: !isCourse ? prev.active_service_clients + 1 : prev.active_service_clients,
-        polsia_platform_cut: newCut,
+        platform_cut: newCut,
         net_founder_payout: newNet,
       };
     });
@@ -606,7 +606,7 @@ export default function App() {
       title: "Founder / CEO",
       industry: "AI & Digital Services",
       company_size: "1-10",
-      source: "Polsia Autonomous Funnel",
+      source: "Operant Autonomous Funnel",
       budget_range: `$${amount.toLocaleString()}`,
       pain_points: ["Scaling without headcount", "Automating GHL client acquisition"],
       ghl_pipeline_stage: "opportunity_won",
@@ -637,7 +637,7 @@ export default function App() {
         {
           id: "act_paid_" + Math.random().toString(36).substr(2, 9),
           timestamp: new Date().toISOString(),
-          agent: "Polsia Strategic AI Co-Founder",
+          agent: "Operant Strategic AI Co-Founder",
           action: `Enrolled into ${offer.title}`,
           details: `Processed $${amount.toLocaleString()} purchase. Dispatched instant access email.`,
           sentiment: "positive",
@@ -715,8 +715,8 @@ export default function App() {
 
       {/* Main App Content View Switcher */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        {activeTab === "polsia_offers" && (
-          <PolsiaOffersHub
+        {activeTab === "operant_offers" && (
+          <OperantOffersHub
             offers={offers}
             setOffers={setOffers}
             campaigns={campaigns}
@@ -727,13 +727,13 @@ export default function App() {
             showToast={showToast}
             onOpenConsultation={(offer) => {
               if (offer) setSelectedOfferForTriage(offer);
-              setActiveTab("polsia_sales");
+              setActiveTab("operant_sales");
             }}
           />
         )}
 
-        {activeTab === "polsia_sales" && (
-          <PolsiaSalesDesk
+        {activeTab === "operant_sales" && (
+          <OperantSalesDesk
             offers={offers}
             leads={leads}
             showToast={showToast}

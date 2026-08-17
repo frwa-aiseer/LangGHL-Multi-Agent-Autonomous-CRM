@@ -80,7 +80,7 @@ app.get("/api/health", (req, res) => {
     status: "ok",
     hasApiKey: !!process.env.GEMINI_API_KEY,
     timestamp: new Date().toISOString(),
-    system: "LangGHL Multi-Agent Autonomous CRM System",
+    system: "Operant AI Multi-Agent Autonomous CRM & Monetization Operating System",
   });
 });
 
@@ -405,9 +405,9 @@ app.post("/api/agent/run-autonomous-loop", async (req, res) => {
 });
 
 // -------------------------------------------------------------
-// API: Polsia Course & Service Offer Generator
+// API: Operant Course & Service Offer Generator
 // -------------------------------------------------------------
-app.post("/api/polsia/generate-offer", async (req, res) => {
+const handleGenerateOffer = async (req: express.Request, res: express.Response) => {
   const { topic, offerType = "course", targetAudience, pricePoint } = req.body;
 
   const fallbackOffer = () => {
@@ -464,13 +464,13 @@ app.post("/api/polsia/generate-offer", async (req, res) => {
             },
           ]
         : undefined,
-      stripe_checkout_url: `https://buy.stripe.com/polsia_${offerType}_${defaultPrice}`,
+      stripe_checkout_url: `https://buy.stripe.com/operant_${offerType}_${defaultPrice}`,
       ghl_tag: `Offer-${(topic || "system").slice(0, 10)}-Active`,
       conversion_rate: isCourse ? 15.4 : 8.9,
     };
   };
 
-  const prompt = `You are the Polsia AI Chief Product Officer & Curriculum Architect.
+  const prompt = `You are the Operant AI Chief Product Officer & Curriculum Architect.
 Generate a high-converting, premium ${offerType} offer package for:
 Topic: "${topic || "AI Automation & CRM Mastery"}"
 Target Audience: "${targetAudience || "Agency owners and tech entrepreneurs"}"
@@ -502,27 +502,30 @@ Return strict JSON matching this structure:
     const result = await generateAiJsonWithFallback(prompt, fallbackOffer);
     return res.json(result);
   } catch (error: any) {
-    console.error("Polsia offer fallback:", error);
+    console.error("Operant offer fallback:", error);
     return res.json(fallbackOffer());
   }
-});
+};
+
+app.post("/api/operant/generate-offer", handleGenerateOffer);
+app.post("/api/polsia/generate-offer", handleGenerateOffer);
 
 // -------------------------------------------------------------
-// API: Polsia Multi-Channel Marketing Campaign Generator
+// API: Operant Multi-Channel Marketing Campaign Generator
 // -------------------------------------------------------------
-app.post("/api/polsia/generate-campaign", async (req, res) => {
+const handleGenerateCampaign = async (req: express.Request, res: express.Response) => {
   const { offerTitle, offerType = "course", channel = "linkedin", targetAngle } = req.body;
 
   const fallbackCampaign = () => ({
     title: `Campaign: Scaled Acquisition for ${offerTitle || "Autonomous AI Solution"}`,
     channel: channel,
     hook: `Most operators spend 20+ hours a week manually chasing clients. Here is the exact autonomous system we built for ${offerTitle || "our clients"}:`,
-    content: `Running a modern business doesn't require 10 employees anymore.\n\nWith autonomous multi-agent pipelines:\n• Inbound leads are qualified in 3 seconds\n• Personalized curriculum & proposal sequences are dispatched instantly\n• Objection-handling agents book high-ticket demo calls directly into GHL calendars\n\nExplore the full ${offerTitle || "system"} breakdown: https://link.polsia.com/go`,
-    cta_url: "https://link.polsia.com/go",
+    content: `Running a modern business doesn't require 10 employees anymore.\n\nWith autonomous multi-agent pipelines:\n• Inbound leads are qualified in 3 seconds\n• Personalized curriculum & proposal sequences are dispatched instantly\n• Objection-handling agents book high-ticket demo calls directly into GHL calendars\n\nExplore the full ${offerTitle || "system"} breakdown: https://link.operantcrm.com/go`,
+    cta_url: "https://link.operantcrm.com/go",
     target_angle: targetAngle || "Efficiency & Zero-Headcount Scale",
   });
 
-  const prompt = `You are the Polsia AI Growth & Marketing Director.
+  const prompt = `You are the Operant AI Growth & Marketing Director.
 Create an organic, viral marketing campaign asset for:
 Offer: "${offerTitle || "AI Multi-Agent System"}" (${offerType})
 Channel: "${channel}" (e.g. linkedin, twitter, email_newsletter, vsl_script, meta_ad)
@@ -542,15 +545,18 @@ Return strict JSON:
     const result = await generateAiJsonWithFallback(prompt, fallbackCampaign);
     return res.json(result);
   } catch (error: any) {
-    console.error("Polsia campaign fallback:", error);
+    console.error("Operant campaign fallback:", error);
     return res.json(fallbackCampaign());
   }
-});
+};
+
+app.post("/api/operant/generate-campaign", handleGenerateCampaign);
+app.post("/api/polsia/generate-campaign", handleGenerateCampaign);
 
 // -------------------------------------------------------------
-// API: Polsia AI Sales Triager & Course/Service Matcher
+// API: Operant AI Sales Triager & Course/Service Matcher
 // -------------------------------------------------------------
-app.post("/api/polsia/sales-triage", async (req, res) => {
+const handleSalesTriage = async (req: express.Request, res: express.Response) => {
   const { prospectBudget, prospectRole, prospectGoal, currentBottleneck } = req.body;
 
   const fallbackTriage = () => {
@@ -569,12 +575,12 @@ app.post("/api/polsia/sales-triage", async (req, res) => {
       next_action: isHighTicket ? "book_discovery_call" : "instant_checkout",
       action_url: isHighTicket
         ? "https://link.ghlcalendar.com/discovery-demo"
-        : "https://buy.stripe.com/polsia_ai_masterclass_497",
+        : "https://buy.stripe.com/operant_ai_masterclass_497",
       ai_closer_message: `Based on your goal to "${prospectGoal || "scale revenue"}", ${isHighTicket ? "our team can build and deploy the entire multi-agent swarm into your GHL account in under 14 days. Let's schedule a 15-min discovery demo:" : "our 40-lesson Masterclass will give you the exact TypeScript repo and GHL snapshots immediately. You can enroll with 1 click below:"}`,
     };
   };
 
-  const prompt = `You are the Polsia AI Chief Revenue Officer & Sales Triage Specialist.
+  const prompt = `You are the Operant AI Chief Revenue Officer & Sales Triage Specialist.
 Evaluate a prospective buyer's requirements and match them with the ideal product (Course vs Cohort vs Done-For-You Service vs Consulting Retainer):
 - Budget: $${prospectBudget || "1,000"}
 - Role/Company: ${prospectRole || "Founder / Agency Owner"}
@@ -597,26 +603,29 @@ Return strict JSON:
     const result = await generateAiJsonWithFallback(prompt, fallbackTriage);
     return res.json(result);
   } catch (error: any) {
-    console.error("Polsia triage fallback:", error);
+    console.error("Operant triage fallback:", error);
     return res.json(fallbackTriage());
   }
-});
+};
+
+app.post("/api/operant/sales-triage", handleSalesTriage);
+app.post("/api/polsia/sales-triage", handleSalesTriage);
 
 // -------------------------------------------------------------
-// API: Polsia Interactive AI Co-Founder Chat
+// API: Operant Interactive AI Co-Founder Chat
 // -------------------------------------------------------------
-app.post("/api/polsia/ai-chat", async (req, res) => {
+const handleAiChat = async (req: express.Request, res: express.Response) => {
   const { message, conversationHistory = [] } = req.body;
 
   const fallbackChat = () => ({
-    reply: `Thanks for reaching out! I'm your Polsia AI Co-Founder & Systems Director. Whether you're looking to learn how to build autonomous multi-agent pipelines through our 40-lesson Masterclass ($497), join our 6-week Builder Cohort ($1,497), or have our engineers deploy a Done-For-You LangGraph + GHL infrastructure for your business ($4,997), I can tailor the exact roadmap for your revenue goals. What is your current monthly revenue target or biggest CRM bottleneck?`,
+    reply: `Thanks for reaching out! I'm your Operant AI Co-Founder & Systems Director. Whether you're looking to learn how to build autonomous multi-agent pipelines through our 40-lesson Masterclass ($497), join our 6-week Builder Cohort ($1,497), or have our engineers deploy a Done-For-You LangGraph + GHL infrastructure for your business ($4,997), I can tailor the exact roadmap for your revenue goals. What is your current monthly revenue target or biggest CRM bottleneck?`,
     suggested_offers: [
-      { id: "offer_course_1", title: "Autonomous AI Agent Masterclass ($497)", link: "https://buy.stripe.com/polsia_ai_masterclass_497" },
+      { id: "offer_course_1", title: "Autonomous AI Agent Masterclass ($497)", link: "https://buy.stripe.com/operant_ai_masterclass_497" },
       { id: "offer_service_1", title: "Done-For-You GHL Multi-Agent ($4,997)", link: "https://link.ghlcalendar.com/discovery-demo" },
     ],
   });
 
-  const prompt = `You are the Polsia AI Co-Founder & Executive Revenue Director.
+  const prompt = `You are the Operant AI Co-Founder & Executive Revenue Director.
 You autonomously run and scale this platform selling AI Courses (Masterclass $497, Cohort $1,497) and High-Ticket Services (Done-For-You GHL buildouts $4,997, Enterprise Retainers $12,500/mo, 1-on-1 Advisory $2,500/mo).
 
 User message: "${message}"
@@ -636,10 +645,13 @@ Return strict JSON:
     const result = await generateAiJsonWithFallback(prompt, fallbackChat);
     return res.json(result);
   } catch (error: any) {
-    console.error("Polsia chat fallback:", error);
+    console.error("Operant chat fallback:", error);
     return res.json(fallbackChat());
   }
-});
+};
+
+app.post("/api/operant/ai-chat", handleAiChat);
+app.post("/api/polsia/ai-chat", handleAiChat);
 
 // -------------------------------------------------------------
 // Vite Middleware setup for development / Production Serving
@@ -660,7 +672,7 @@ async function startServer() {
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`LangGHL Multi-Agent System running on http://0.0.0.0:${PORT}`);
+    console.log(`Operant AI Multi-Agent System running on http://0.0.0.0:${PORT}`);
   });
 }
 
