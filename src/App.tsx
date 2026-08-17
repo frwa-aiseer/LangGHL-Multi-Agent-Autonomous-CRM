@@ -32,6 +32,7 @@ import { Header } from "./components/Header";
 import { UnifiedProductsView } from "./components/UnifiedProductsView";
 import { UnifiedLeadsAndDeals } from "./components/UnifiedLeadsAndDeals";
 import { UnifiedAutomations } from "./components/UnifiedAutomations";
+import { SubscriptionAuthPortal, UserSession } from "./components/SubscriptionAuthPortal";
 import { LeadDossierModal } from "./components/LeadDossierModal";
 import { NewLeadModal } from "./components/NewLeadModal";
 import confetti from "canvas-confetti";
@@ -56,6 +57,15 @@ export default function App() {
   const [loopIntervalSec, setLoopIntervalSec] = useState(15);
   const [isProcessing, setIsProcessing] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const [userSession, setUserSession] = useState<UserSession>({
+    companyName: "NexGen Logistics",
+    email: "alex.wright@nexgen.io",
+    plan: "Growth",
+    role: "Company Admin",
+    isLoggedIn: true,
+  });
+  const [showAuthPortal, setShowAuthPortal] = useState<boolean>(false);
 
   const loopTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -691,24 +701,44 @@ export default function App() {
         </div>
       )}
 
-      {/* Main Header & Command Bar */}
-      <Header
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        leads={leads}
-        ghlConfig={ghlConfig}
-        isLooping={isLooping}
-        setIsLooping={setIsLooping}
-        onRunInstantLoop={handleRunInstantLoop}
-        onOpenWebhookModal={() => setActiveTab("automations")}
-        onOpenNewLeadModal={() => setIsNewLeadModalOpen(true)}
-        loopIntervalSec={loopIntervalSec}
-        setLoopIntervalSec={setLoopIntervalSec}
-        isProcessing={isProcessing}
-      />
+      {/* Subscription Login & Signup Portal (When active) */}
+      {showAuthPortal ? (
+        <SubscriptionAuthPortal
+          onLoginSuccess={(session) => {
+            setUserSession(session);
+            setShowAuthPortal(false);
+            confetti({
+              particleCount: 80,
+              spread: 70,
+              origin: { y: 0.6 },
+            });
+            showToast(`🎉 Logged into ${session.companyName} (${session.plan} Plan)`);
+          }}
+          onContinueAsGuest={() => setShowAuthPortal(false)}
+        />
+      ) : (
+        <>
+          {/* Main Header & Command Bar */}
+          <Header
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            leads={leads}
+            ghlConfig={ghlConfig}
+            isLooping={isLooping}
+            setIsLooping={setIsLooping}
+            onRunInstantLoop={handleRunInstantLoop}
+            onOpenWebhookModal={() => setActiveTab("automations")}
+            onOpenNewLeadModal={() => setIsNewLeadModalOpen(true)}
+            loopIntervalSec={loopIntervalSec}
+            setLoopIntervalSec={setLoopIntervalSec}
+            isProcessing={isProcessing}
+            userCompany={userSession.companyName}
+            userPlan={userSession.plan}
+            onOpenAuthPortal={() => setShowAuthPortal(true)}
+          />
 
-      {/* Main App Content View Switcher */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+          {/* Main App Content View Switcher */}
+          <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         {/* TAB 1: Products & Revenue */}
         {activeTab === "products" && (
           <UnifiedProductsView
@@ -777,15 +807,17 @@ export default function App() {
         />
       )}
 
-      {/* New Lead Creation Modal */}
-      <NewLeadModal
-        isOpen={isNewLeadModalOpen}
-        onClose={() => setIsNewLeadModalOpen(false)}
-        onAddLead={(newLead) => {
-          setLeads((prev) => [newLead, ...prev]);
-          showToast(`Added ${newLead.first_name} (${newLead.company}) to pipeline queue`);
-        }}
-      />
-    </div>
-  );
+        {/* New Lead Creation Modal */}
+        <NewLeadModal
+          isOpen={isNewLeadModalOpen}
+          onClose={() => setIsNewLeadModalOpen(false)}
+          onAddLead={(newLead) => {
+            setLeads((prev) => [newLead, ...prev]);
+            showToast(`Added ${newLead.first_name} (${newLead.company}) to pipeline queue`);
+          }}
+        />
+      </>
+    )}
+  </div>
+);
 }

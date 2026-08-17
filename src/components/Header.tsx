@@ -28,6 +28,9 @@ interface HeaderProps {
   loopIntervalSec: number;
   setLoopIntervalSec: (sec: number) => void;
   isProcessing: boolean;
+  userCompany?: string;
+  userPlan?: string;
+  onOpenAuthPortal?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -43,6 +46,9 @@ export const Header: React.FC<HeaderProps> = ({
   loopIntervalSec,
   setLoopIntervalSec,
   isProcessing,
+  userCompany = "NexGen Logistics",
+  userPlan = "Growth",
+  onOpenAuthPortal,
 }) => {
   const activeLeadsCount = leads.length;
   const bookedAppointmentsCount = leads.filter(
@@ -214,9 +220,28 @@ export const Header: React.FC<HeaderProps> = ({
           })}
         </div>
 
-        <div className="hidden sm:flex items-center gap-2 text-xs text-slate-400">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span>All systems operational</span>
+        <div className="hidden sm:flex items-center gap-3">
+          {/* Company Account & Subscription Badge */}
+          <button
+            onClick={onOpenAuthPortal}
+            id="btn-header-subscription-account"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950/80 hover:bg-slate-800 border border-slate-800 text-xs text-slate-300 transition-all group"
+            title="Manage Company Subscription & Account Access"
+          >
+            <div className="w-2 h-2 rounded-full bg-indigo-400" />
+            <span className="font-semibold text-white group-hover:text-indigo-300">{userCompany}</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-bold border border-indigo-500/30">
+              {userPlan} Plan
+            </span>
+          </button>
+
+          <button
+            onClick={onOpenAuthPortal}
+            id="btn-switch-to-auth-portal"
+            className="text-xs text-slate-400 hover:text-slate-200 underline underline-offset-4"
+          >
+            Auth / Switch Account
+          </button>
         </div>
       </div>
     </header>
